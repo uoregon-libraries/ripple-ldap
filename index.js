@@ -22,6 +22,7 @@ var handlers = {
   "plugin:configMenuInputs":  [configMenu],
   "plugin:menuSave":          [menuSave],
   "plugin:configLoaded":      [configLoaded],
+  "user:authenticate":        [userAuthenticate],
 };
 
 module.exports = exports;
@@ -97,6 +98,10 @@ function configLoaded(documents) {
       setConfig(documents[i])
     }
   }
+}
+
+function userAuthenticate(auth, callback) {
+  callback();
 }
 
 /**
