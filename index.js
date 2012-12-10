@@ -105,13 +105,20 @@ function configLoaded(documents) {
 
 // Connects the ldap client if it has configuration
 function connect() {
-  if (config && config.hostname && config.bindDNFormat && config.baseDN) {
-    client = ldap.createClient({url: config.hostname});
-    console.log("LDAP client connected to " + config.hostname);
-  }
-  else {
+  // Missing config means no attempt to connect
+  if (!config || !config.hostname || !config.bindDNFormat || !config.baseDN) {
     console.log("LDAP client missing configuration - not connecting");
+    return;
   }
+
+  // Make sure we have the right replace string for user id
+  if (config.bindDNFormat.indexOf("{{user id}}") == -1) {
+    console.log("LDAP client configuration invalid - \"{{user id}}\" must be part of the bind DN format");
+    return;
+  }
+
+  client = ldap.createClient({url: config.hostname});
+  console.log("LDAP client connected to " + config.hostname);
 }
 
 // Disconnects the ldap client if it's connected
