@@ -149,7 +149,7 @@ function disconnect() {
   if (client) {
     console.log("LDAP client disconnecting");
     client.unbind();
-    client = undefined;
+    client = null;
   }
 }
 
