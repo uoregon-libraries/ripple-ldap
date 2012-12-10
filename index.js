@@ -101,7 +101,25 @@ function configLoaded(documents) {
 }
 
 function userAuthenticate(auth, callback) {
-  callback();
+  // Only check LDAP if we have a working client
+  if (client) {
+    client.bind(config.bindDNFormat.replace("{{user id}}", auth.user), auth.password, function(err) {
+      if (err) {
+        // Invalid credentials isn't really an error - we just let the normal system authenticate
+        // as usual
+        if (err.name == "InvalidCredentialsError") {
+          return callback();
+        }
+
+        // Real error?  Shoot it up the stack.
+        return callback(err, null);
+      }
+
+      // TODO: Retrieve or insert a user record
+      var user = {name: "Test O. User", email: "testo@example.com", user: "testo"}
+      return callback(null, user);
+    });
+  }
 }
 
 /**
