@@ -34,6 +34,9 @@ var config = {};
 // Package-global LDAP client object
 var client;
 
+// We're using this enough that it needs to stop being a magic string
+var USER_ID = "{{user id}}";
+
 /**
  * EVENT HANDLERS
  */
@@ -62,7 +65,7 @@ function configMenu(menu) {
   // Bind DN
   menu.inputs.push({
     key: "bindDNFormat",
-    label: "LDAP bind DN format - use \"{{user id}}\" as a placeholder for where the user's id will be (this will probably look something like \"CN={{user id}}\")",
+    label: "LDAP bind DN format - use \"" + USER_ID + "\" as a placeholder for where the user's id will be (this will probably look something like \"CN=" + USER_ID + "\")",
     placeholder: "Enter your LDAP bind DN format",
     value: ""
   });
@@ -109,7 +112,7 @@ function userAuthenticate(auth, callback) {
     // TODO: Create a public / plugin API rather than using modules directly
     var AM = require("../../lib/account-manager");
 
-    client.bind(config.bindDNFormat.replace("{{user id}}", auth.user), auth.password, function(err) {
+    client.bind(config.bindDNFormat.replace(USER_ID, auth.user), auth.password, function(err) {
       if (err) {
         // Invalid credentials isn't really an error - we just let the normal system authenticate
         // as usual
@@ -174,8 +177,8 @@ function validateConfiguration() {
   if (!config.bindDNFormat) {
     errors.push("Bind DN format is required");
   }
-  else if (config.bindDNFormat.indexOf("{{user id}}") == -1) {
-    errors.push("Invalid bindDN format - missing \"{{user id}}\"");
+  else if (config.bindDNFormat.indexOf(USER_ID) == -1) {
+    errors.push("Invalid bindDN format - missing \"" + USER_ID + "\"");
   }
 
   if (!config.baseDN) {
