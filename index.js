@@ -160,17 +160,42 @@ function userAuthenticate(auth, callback) {
  * HELPER METHODS
  */
 
-// Connects the ldap client if it has configuration
-function connect() {
-  // Missing config means no attempt to connect
-  if (!config || !config.hostname || !config.bindDNFormat || !config.baseDN) {
-    console.log("LDAP client missing configuration - not connecting");
-    return;
+// Returns an array of error messages when configuration isn't valid
+function validateConfiguration() {
+  var errors = [];
+  if (!config) {
+    return ["No configuration has been loaded"];
   }
 
-  // Make sure we have the right replace string for user id
-  if (config.bindDNFormat.indexOf("{{user id}}") == -1) {
-    console.log("LDAP client configuration invalid - \"{{user id}}\" must be part of the bind DN format");
+  if (!config.hostname) {
+    errors.push("Hostname is required");
+  }
+
+  if (!config.bindDNFormat) {
+    errors.push("Bind DN format is required");
+  }
+  else if (config.bindDNFormat.indexOf("{{user id}}") == -1) {
+    errors.push("Invalid bindDN format - missing \"{{user id}}\"");
+  }
+
+  if (!config.baseDN) {
+    errors.push("Base DN is required");
+  }
+
+  return errors;
+}
+
+// Connects the ldap client if it has configuration
+function connect() {
+  // TODO: Make this log errors in a nicer way (logger API exposed in plugin-manager?)
+  var errors = validateConfiguration();
+  var errorCount = errors.length;
+  if (errorCount > 0) {
+    console.log("LDAP configuration error, connect() aborted:");
+    for(i = 0; i < errorCount; i++) {
+      console.log("* ", errors[i]);
+    }
+
     return;
   }
 
