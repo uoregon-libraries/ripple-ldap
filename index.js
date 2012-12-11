@@ -77,6 +77,15 @@ function configMenu(menu) {
     placeholder: "Enter your LDAP base DN",
     value: ""
   });
+
+  // Filter expression for finding user data
+  // TODO: Should we separate this into one filter for viewers and one for presenters?
+  menu.inputs.push({
+    key: "filter",
+    label: "LDAP filter expression  - use \"" + USER_ID + "\" as a placeholder for where the user's id will be (this will probably look something like \"(&(CN=" + USER_ID + ")(objectClass=person))\")",
+    placeholder: "Enter your LDAP filter",
+    value: ""
+  });
 }
 
 // Changes config and closes and reopens the LDAP connection if enabled
@@ -185,6 +194,13 @@ function validateConfiguration() {
     errors.push("Base DN is required");
   }
 
+  if (!config.filter) {
+    errors.push("Search filter is required");
+  }
+  else if (config.filter.indexOf(USER_ID) == -1) {
+    errors.push("Invalid filter format - missing \"" + USER_ID + "\"");
+  }
+
   return errors;
 }
 
@@ -234,7 +250,8 @@ function setConfig(data) {
   config = {
     hostname: data.hostname,
     bindDNFormat: data.bindDNFormat,
-    baseDN: data.baseDN
+    baseDN: data.baseDN,
+    filter: data.filter,
   }
 
   // In theory we should only reconnect on enable, but the current API can only get config to
