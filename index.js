@@ -134,11 +134,24 @@ function userAuthenticate(auth, callback) {
         }
 
         // TODO: Import LDAP stuff here
-        var user = {name: "Test O. User", email: "testo@example.com", user: "testo"}
-        return callback(null, user);
-      });
+        var newUser = {
+          name: "Test O. User",
+          email: "testo@example.com",
+          user: auth.user,
 
-      return callback(null, auth);
+          // TODO: Hard-coded password allows anybody to bypass LDAP auth to gain access to
+          // the local account.  Maybe add a flag to .signup which forces an impossible password,
+          // such as an empty string, so local auth becomes impossible.
+          pass: "TODO"
+        };
+
+        AM.signup(newUser, function(err) {
+          if (err) {
+            return callback(err);
+          }
+          return callback(null, newUser);
+        });
+      });
     });
   }
 }
