@@ -135,7 +135,7 @@ function userAuthenticate(auth, callback) {
 
       // If we got here, the authentication was a success - add the user if necessary, and store
       // fake credentials in all cases
-      console.log("Authenticated via LDAP - setting up local access");
+      console.log("LDAP authentication successful");
 
       // Look for a local account with the same user id - we always assume user id will be unique.
       // If a user is found, we just return that and bypass the normal authentication.  If there is
@@ -145,23 +145,50 @@ function userAuthenticate(auth, callback) {
           return callback(null, user);
         }
 
-        // TODO: Import LDAP stuff here
-        var newUser = {
-          name: "Test O. User",
-          email: "testo@example.com",
-          user: auth.user,
-
-          // TODO: Hard-coded password allows anybody to bypass LDAP auth to gain access to
-          // the local account.  Maybe add a flag to .signup which forces an impossible password,
-          // such as an empty string, so local auth becomes impossible.
-          pass: "TODO"
-        };
-
-        AM.signup(newUser, function(err) {
+        // Import LDAP user
+        client.search(config.baseDN, {filter: config.filter.replace(USER_ID, auth.user), scope: "sub"}, function(err, res) {
           if (err) {
-            return callback(err);
+            console.log("Error trying to search user data: " + util.inspect(err));
+            return callback(err, null);
           }
-          return callback(null, newUser);
+
+          // Start building the new user record
+          var newUser = {
+            user: auth.user,
+
+            // TODO: Hard-coded password allows anybody to bypass LDAP auth to gain access to
+            // the local account.  Maybe add a flag to .signup which forces an impossible password,
+            // such as an empty string, so local auth becomes impossible.
+            pass: "TODO"
+          };
+
+          // If any errors occur, we need to flag the user search as having failed so we can call
+          // the callback properly
+          var failure = null;
+          res.on('error', function(err) {
+            failed = err;
+          });
+
+          res.on('searchEntry', function(entry) {
+            newUser.name = entry.object.displayName;
+            newUser.email = entry.object.mail;
+          });
+
+          res.on('end', function(result) {
+            if (failure) {
+              return callback(failure);
+            }
+
+            console.log("LDAP read successful - attempting to import: ", util.inspect(newUser));
+            AM.signup(newUser, function(err) {
+              if (err) {
+                return callback(err, null);
+              }
+
+              console.log("Local import successful");
+              return callback(null, newUser);
+            });
+          });
         });
       });
     });
