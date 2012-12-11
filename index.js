@@ -128,7 +128,7 @@ function userAuthenticate(auth, callback) {
       // Look for a local account with the same user id - we always assume user id will be unique.
       // If a user is found, we just return that and bypass the normal authentication.  If there is
       // no user, we create one, importing data from LDAP.
-      AM.findUserByName(authData.user, function(err, user) {
+      AM.findUserByName(auth.user, function(err, user) {
         if (user) {
           return callback(null, user);
         }
