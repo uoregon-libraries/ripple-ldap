@@ -103,6 +103,12 @@ function configLoaded(documents) {
 function userAuthenticate(auth, callback) {
   // Only check LDAP if we have a working client
   if (client) {
+    // Pull in the account manager only where it's needed - there's some circular reference issue
+    // which causes AM's plugin object to be null if the plugin loads a module which relies on AM.
+    //
+    // TODO: Create a public / plugin API rather than using modules directly
+    var AM = require("../../lib/account-manager");
+
     client.bind(config.bindDNFormat.replace("{{user id}}", auth.user), auth.password, function(err) {
       if (err) {
         // Invalid credentials isn't really an error - we just let the normal system authenticate
@@ -115,9 +121,24 @@ function userAuthenticate(auth, callback) {
         return callback(err, null);
       }
 
-      // TODO: Retrieve or insert a user record
-      var user = {name: "Test O. User", email: "testo@example.com", user: "testo"}
-      return callback(null, user);
+      // If we got here, the authentication was a success - add the user if necessary, and store
+      // fake credentials in all cases
+      console.log("Authenticated via LDAP - setting up local access");
+
+      // Look for a local account with the same user id - we always assume user id will be unique.
+      // If a user is found, we just return that and bypass the normal authentication.  If there is
+      // no user, we create one, importing data from LDAP.
+      AM.findUserByName(authData.user, function(err, user) {
+        if (user) {
+          return callback(null, user);
+        }
+
+        // TODO: Import LDAP stuff here
+        var user = {name: "Test O. User", email: "testo@example.com", user: "testo"}
+        return callback(null, user);
+      });
+
+      return callback(null, auth);
     });
   }
 }
