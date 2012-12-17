@@ -123,88 +123,86 @@ function userAuthenticate(auth, cb) {
     return callback();
   }
 
-  if (client) {
-    // Pull in the account manager only where it's needed - there's a circular require issue which
-    // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
-    //
-    // TODO: Create a public / plugin API rather than using modules directly
-    var AM = require("../../lib/account-manager");
+  // Pull in the account manager only where it's needed - there's a circular require issue which
+  // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
+  //
+  // TODO: Create a public / plugin API rather than using modules directly
+  var AM = require("../../lib/account-manager");
 
-    client.bind(config.bindDNFormat.replace(USER_ID, auth.user), auth.password, function(err) {
-      if (err) {
-        // Invalid credentials isn't really an error - we just let the normal system authenticate
-        // as usual
-        if (err.name == "InvalidCredentialsError") {
-          console.log("Unable to authenticate via LDAP - falling back to local auth");
-          return callback();
-        }
-
-        // Real error?  Shoot it up the stack.
-        console.log("Unable to authenticate via LDAP due to errors: " + err.name + " " + err.message);
-        return callback(err, null);
+  client.bind(config.bindDNFormat.replace(USER_ID, auth.user), auth.password, function(err) {
+    if (err) {
+      // Invalid credentials isn't really an error - we just let the normal system authenticate
+      // as usual
+      if (err.name == "InvalidCredentialsError") {
+        console.log("Unable to authenticate via LDAP - falling back to local auth");
+        return callback();
       }
 
-      // If we got here, the authentication was a success - add the user if necessary, and store
-      // fake credentials in all cases
-      console.log("LDAP authentication successful");
+      // Real error?  Shoot it up the stack.
+      console.log("Unable to authenticate via LDAP due to errors: " + err.name + " " + err.message);
+      return callback(err, null);
+    }
 
-      // Look for a local account with the same user id - we always assume user id will be unique.
-      // If a user is found, we just return that and bypass the normal authentication.  If there is
-      // no user, we create one, importing data from LDAP.
-      AM.findUserByName(auth.user, function(err, user) {
-        if (user) {
-          return callback(null, user);
+    // If we got here, the authentication was a success - add the user if necessary, and store
+    // fake credentials in all cases
+    console.log("LDAP authentication successful");
+
+    // Look for a local account with the same user id - we always assume user id will be unique.
+    // If a user is found, we just return that and bypass the normal authentication.  If there is
+    // no user, we create one, importing data from LDAP.
+    AM.findUserByName(auth.user, function(err, user) {
+      if (user) {
+        return callback(null, user);
+      }
+
+      // Import LDAP user
+      client.search(config.baseDN, {filter: config.filter.replace(USER_ID, auth.user), scope: "sub"}, function(err, res) {
+        if (err) {
+          console.log("Error trying to search user data: " + util.inspect(err));
+          return callback(err, null);
         }
 
-        // Import LDAP user
-        client.search(config.baseDN, {filter: config.filter.replace(USER_ID, auth.user), scope: "sub"}, function(err, res) {
-          if (err) {
-            console.log("Error trying to search user data: " + util.inspect(err));
-            return callback(err, null);
+        // Start building the new user record
+        var newUser = {
+          user: auth.user,
+
+          // We set password to a dummy string because there's no way our hashed passwords could
+          // ever use this to allow local authentication.  The "external" flag tells AM not to
+          // do any of its usual salting.
+          pass: "LDAP",
+          external: true
+        };
+
+        // If any errors occur, we need to flag the user search as having failed so we can call
+        // the callback properly
+        var failure = null;
+        res.on('error', function(err) {
+          failed = err;
+        });
+
+        res.on('searchEntry', function(entry) {
+          newUser.name = entry.object.displayName;
+          newUser.email = entry.object.mail;
+        });
+
+        res.on('end', function(result) {
+          if (failure) {
+            return callback(failure);
           }
 
-          // Start building the new user record
-          var newUser = {
-            user: auth.user,
-
-            // We set password to a dummy string because there's no way our hashed passwords could
-            // ever use this to allow local authentication.  The "external" flag tells AM not to
-            // do any of its usual salting.
-            pass: "LDAP",
-            external: true
-          };
-
-          // If any errors occur, we need to flag the user search as having failed so we can call
-          // the callback properly
-          var failure = null;
-          res.on('error', function(err) {
-            failed = err;
-          });
-
-          res.on('searchEntry', function(entry) {
-            newUser.name = entry.object.displayName;
-            newUser.email = entry.object.mail;
-          });
-
-          res.on('end', function(result) {
-            if (failure) {
-              return callback(failure);
+          console.log("LDAP read successful - attempting to import: ", util.inspect(newUser));
+          AM.signup(newUser, function(err) {
+            if (err) {
+              return callback(err, null);
             }
 
-            console.log("LDAP read successful - attempting to import: ", util.inspect(newUser));
-            AM.signup(newUser, function(err) {
-              if (err) {
-                return callback(err, null);
-              }
-
-              console.log("Local import successful");
-              return callback(null, newUser);
-            });
+            console.log("Local import successful");
+            return callback(null, newUser);
           });
         });
       });
     });
-  }
+  });
 }
 
 /**
