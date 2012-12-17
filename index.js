@@ -115,8 +115,8 @@ function configLoaded(documents) {
 function userAuthenticate(auth, callback) {
   // Only check LDAP if we have a working client
   if (client) {
-    // Pull in the account manager only where it's needed - there's some circular reference issue
-    // which causes AM's plugin object to be null if the plugin loads a module which relies on AM.
+    // Pull in the account manager only where it's needed - there's a circular require issue which
+    // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
     //
     // TODO: Create a public / plugin API rather than using modules directly
     var AM = require("../../lib/account-manager");
