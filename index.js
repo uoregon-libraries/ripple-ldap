@@ -178,7 +178,7 @@ function presenterAuth(auth, cb) {
         // the callback properly
         var failure = null;
         res.on('error', function(err) {
-          failed = err;
+          failure = err;
         });
 
         res.on('searchEntry', function(entry) {
