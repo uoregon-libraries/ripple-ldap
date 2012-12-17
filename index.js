@@ -126,10 +126,12 @@ function userAuthenticate(auth, callback) {
         // Invalid credentials isn't really an error - we just let the normal system authenticate
         // as usual
         if (err.name == "InvalidCredentialsError") {
+          console.log("Unable to authenticate via LDAP - falling back to local auth");
           return callback();
         }
 
         // Real error?  Shoot it up the stack.
+        console.log("Unable to authenticate via LDAP due to errors: " + err.name + " " + err.message);
         return callback(err, null);
       }
 
