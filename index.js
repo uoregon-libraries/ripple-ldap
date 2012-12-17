@@ -41,12 +41,6 @@ var USER_ID = "{{user id}}";
  * EVENT HANDLERS
  */
 
-// Closes the LDAP connection if it's open
-exports.onDisable = function() {
-  disconnect();
-  console.log("LDAP Authentication disabled");
-}
-
 // Event handler - hit when the app requests this plugin's configuration menu
 function configMenu(menu) {
   console.log("Configuration menu requested: ", util.inspect(menu));
