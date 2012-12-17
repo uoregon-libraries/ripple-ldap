@@ -23,6 +23,7 @@ var handlers = {
   "plugin:menuSave":          [menuSave],
   "plugin:configLoaded":      [configLoaded],
   "user:authenticate":        [userAuthenticate],
+  "auth:clientUI":            [clientUI],
 };
 
 module.exports = exports;
@@ -203,6 +204,11 @@ function userAuthenticate(auth, cb) {
       });
     });
   });
+}
+
+// Alerts the UI that we want name and password on the form
+function clientUI(locals) {
+  locals.auth = true;
 }
 
 /**
