@@ -117,6 +117,12 @@ function userAuthenticate(auth, cb) {
   connect();
 
   // Only check LDAP if we managed to get a working client
+  if (!client) {
+    // If we got here, something went very wrong with the LDAP connection
+    console.log("LDAP connection was missing in authentication attempt");
+    return callback();
+  }
+
   if (client) {
     // Pull in the account manager only where it's needed - there's a circular require issue which
     // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
@@ -199,10 +205,6 @@ function userAuthenticate(auth, cb) {
       });
     });
   }
-
-  // If we got here, something went very wrong with the LDAP connection
-  console.log("LDAP connection was missing in authentication attempt");
-  return callback();
 }
 
 /**
