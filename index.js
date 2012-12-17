@@ -156,10 +156,11 @@ function userAuthenticate(auth, callback) {
           var newUser = {
             user: auth.user,
 
-            // TODO: Hard-coded password allows anybody to bypass LDAP auth to gain access to
-            // the local account.  Maybe add a flag to .signup which forces an impossible password,
-            // such as an empty string, so local auth becomes impossible.
-            pass: "TODO"
+            // We set password to a dummy string because there's no way our hashed passwords could
+            // ever use this to allow local authentication.  The "external" flag tells AM not to
+            // do any of its usual salting.
+            pass: "LDAP",
+            external: true
           };
 
           // If any errors occur, we need to flag the user search as having failed so we can call
