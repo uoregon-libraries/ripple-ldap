@@ -24,6 +24,7 @@ var handlers = {
   "plugin:configLoaded":      [configLoaded],
   "auth:presenterAuth":       [presenterAuth],
   "auth:clientUI":            [clientUI],
+  "auth:clientAuth":          [clientAuth],
 };
 
 module.exports = exports;
@@ -201,6 +202,62 @@ function presenterAuth(auth, cb) {
             return callback(null, newUser);
           });
         });
+      });
+    });
+  });
+}
+
+function clientAuth(auth, cb) {
+  // Always disconnect after finishing regardless of whatever else has happened
+  callback = function(err, obj) {
+    disconnect();
+    cb(err, obj);
+  };
+
+  // Get an LDAP connection
+  connect();
+
+  // Only check LDAP if we managed to get a working client
+  if (!client) {
+    // If we got here, something went very wrong with the LDAP connection
+    return callback({message: "LDAP connection was missing in authentication attempt", name: "MissingConnection"});
+  }
+
+  client.bind(config.bindDNFormat.replace(USER_ID, auth.user), auth.password, function(err) {
+    if (err) {
+      // All errors are fatal on the client auth side since there's no "fallback" login system
+      return callback(err, null);
+    }
+
+    console.log("LDAP authentication successful");
+
+    // Search for LDAP user to make sure this user is allowed here
+    client.search(config.baseDN, {filter: config.filter.replace(USER_ID, auth.user), scope: "sub"}, function(err, res) {
+      if (err) {
+        return callback(err, null);
+      }
+
+      // Set up a user data record
+      var userData = { user: auth.user };
+
+      // If any errors occur, we need to flag the user search as having failed so we can call
+      // the callback properly
+      var failure = null;
+      res.on('error', function(err) {
+        failure = err;
+      });
+
+      res.on('searchEntry', function(entry) {
+        userData.name = entry.object.displayName;
+        userData.email = entry.object.mail;
+      });
+
+      res.on('end', function(result) {
+        if (failure) {
+          return callback(failure);
+        }
+
+        return callback(null, newUser);
       });
     });
   });
