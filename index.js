@@ -22,7 +22,7 @@ var handlers = {
   "plugin:configMenuInputs":  [configMenu],
   "plugin:menuSave":          [menuSave],
   "plugin:configLoaded":      [configLoaded],
-  "user:authenticate":        [userAuthenticate],
+  "auth:presenterAuth":       [presenterAuth],
   "auth:clientUI":            [clientUI],
 };
 
@@ -107,7 +107,7 @@ function configLoaded(documents) {
   }
 }
 
-function userAuthenticate(auth, cb) {
+function presenterAuth(auth, cb) {
   // Always disconnect after finishing regardless of whatever else has happened
   callback = function(err, obj) {
     disconnect();
