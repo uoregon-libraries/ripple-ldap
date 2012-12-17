@@ -112,8 +112,17 @@ function configLoaded(documents) {
   }
 }
 
-function userAuthenticate(auth, callback) {
-  // Only check LDAP if we have a working client
+function userAuthenticate(auth, cb) {
+  // Always disconnect after finishing regardless of whatever else has happened
+  callback = function(err, obj) {
+    disconnect();
+    cb(err, obj);
+  };
+
+  // Get an LDAP connection
+  connect();
+
+  // Only check LDAP if we managed to get a working client
   if (client) {
     // Pull in the account manager only where it's needed - there's a circular require issue which
     // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
@@ -276,9 +285,6 @@ function disconnect() {
 function setConfig(data) {
   console.log("LDAP client got config: " + util.inspect(data));
 
-  // Always disconnect on config changes - even if we're disabled this call won't cost us anything
-  disconnect();
-
   // Make sure we only copy in relevant information - no need to get id, plugin name, or any other
   // potential data that the DB might throw our way
   config = {
@@ -287,8 +293,4 @@ function setConfig(data) {
     baseDN: data.baseDN,
     filter: data.filter,
   }
-
-  // In theory we should only reconnect on enable, but the current API can only get config to
-  // plugins that are enabled, so this is safe.
-  connect();
 }
