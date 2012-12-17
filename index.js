@@ -196,6 +196,10 @@ function userAuthenticate(auth, callback) {
       });
     });
   }
+
+  // If we got here, something went very wrong with the LDAP connection
+  console.log("LDAP connection was missing in authentication attempt");
+  return callback();
 }
 
 /**
