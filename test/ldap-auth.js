@@ -22,4 +22,27 @@ describe("LDAP Authentication", function() {
   afterEach(function() {
     createClient.restore();
   });
+
+  describe("#configMenu(menu)", function() {
+    var menu;
+    beforeEach(function() {
+      menu = {};
+      auth.configMenu(menu);
+    });
+
+    it("should add multiple inputs to the menu", function() {
+      should.exist(menu.inputs);
+      menu.inputs.length.should.be.above(1);
+    });
+
+    it("should set up key, label, value, and placeholder for all inputs", function() {
+      for (var x = 0, l = menu.inputs.length; x < l; x++) {
+        var input = menu.inputs[x];
+        should.exist(input.key);
+        should.exist(input.label);
+        should.exist(input.value);
+        should.exist(input.placeholder);
+      }
+    });
+  });
 });
