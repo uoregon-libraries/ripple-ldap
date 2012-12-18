@@ -125,6 +125,11 @@ function presenterAuth(auth, cb) {
     return callback();
   }
 
+  // Make sure we don't crash when bad data is passed in
+  if (!auth || !auth.password || !auth.user) {
+    return callback();
+  }
+
   // Pull in the account manager only where it's needed - there's a circular require issue which
   // causes AM's plugin object to be null if plugin-manager loads a module which relies on AM.
   //
@@ -221,6 +226,11 @@ function clientAuth(auth, cb) {
   if (!client) {
     // If we got here, something went very wrong with the LDAP connection
     return callback({message: "LDAP connection was missing in authentication attempt", name: "MissingConnection"});
+  }
+
+  // Make sure we don't crash when bad data is passed in
+  if (!auth || !auth.password || !auth.user) {
+    return callback({message: "Bad credentials provided"});
   }
 
   client.bind(config.bindDNFormat.replace(USER_ID, auth.user), auth.password, function(err) {
