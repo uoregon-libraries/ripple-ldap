@@ -257,7 +257,7 @@ function clientAuth(auth, cb) {
           return callback(failure);
         }
 
-        return callback(null, newUser);
+        return callback(null, userData);
       });
     });
   });
