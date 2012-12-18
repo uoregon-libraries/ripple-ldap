@@ -72,4 +72,38 @@ describe("LDAP Authentication", function() {
       stub.restore();
     });
   });
+
+  describe("#presenterAuth(auth, cb", function() {
+    // This is tricky due to the external dependency - is there a way to override a require()
+    // statement?  If not, testing might require putting the AM require into a function we can
+    // stub out.
+    //
+    // This method (and clientAuth) really should be broken into smaller chunks anyway, so testing
+    // is simpler and code is cleaner.
+    it("Needs in-depth testing");
+  });
+
+  describe("#clientAuth(auth, cb", function() {
+    it("Needs in-depth testing");
+  });
+
+  describe("#clientUI(locals)", function() {
+    it("Needs in-depth testing");
+  });
+
+  describe("#validateConfiguration()", function() {
+    it("Needs in-depth testing");
+  });
+
+  describe("#connect()", function() {
+    it("Needs in-depth testing");
+  });
+
+  describe("#disconnect()", function() {
+    it("Needs in-depth testing");
+  });
+
+  describe("#setConfig(data)", function() {
+    it("Needs in-depth testing");
+  });
 });
