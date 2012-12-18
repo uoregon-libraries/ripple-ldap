@@ -3,7 +3,7 @@ var libpath = process.env['PLUGIN_COV'] ? '../lib-cov' : '../lib';
 var should = require("should")
   , sinon = require("sinon")
   , ldap = require('ldapjs')
-  , auth = require(libpath + "/ldap-auth")._auth
+  , auth = require(libpath + "/ldap-auth")._LDAPAuth
 
 describe("LDAP Authentication", function() {
   var createClient;
