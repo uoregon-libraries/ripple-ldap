@@ -2,6 +2,24 @@ var libpath = process.env['PLUGIN_COV'] ? '../lib-cov' : '../lib';
 
 var should = require("should")
   , sinon = require("sinon")
+  , ldap = require('ldapjs')
+  , auth = require(libpath + "/ldap-auth")._methods
 
 describe("LDAP Authentication", function() {
+  var createClient;
+  var fakeClient;
+
+  beforeEach(function() {
+    // NEVER hit actual LDAP during unit tests!
+    createClient = sinon.stub(ldap, "createClient");
+
+    // To be sure we don't call createClient anywhere we shouldn't, we start off having it return
+    // bogus data - if tests need ldap, they should overwrite this!
+    fakeClient = {};
+    createClient.returns(fakeClient);
+  });
+
+  afterEach(function() {
+    createClient.restore();
+  });
 });
