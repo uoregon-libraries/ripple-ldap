@@ -45,4 +45,14 @@ describe("LDAP Authentication", function() {
       }
     });
   });
+
+  describe("#menuSave", function() {
+    it("should call setConfig with data passed in", function() {
+      var stub = sinon.stub(auth, "setConfig");
+      auth.menuSave({foo: "bar"});
+      stub.withArgs({foo: "bar"}).calledOnce.should.be.true;
+      stub.restore();
+    });
+  });
+
 });
