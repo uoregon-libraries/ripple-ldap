@@ -88,7 +88,11 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#clientUI(locals)", function() {
-    it("Needs in-depth testing");
+    it("should set auth to true on locals", function() {
+      var locals = {};
+      auth.clientUI(locals);
+      locals.auth.should.be.true;
+    });
   });
 
   describe("#validateConfiguration()", function() {
