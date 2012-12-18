@@ -55,4 +55,21 @@ describe("LDAP Authentication", function() {
     });
   });
 
+  describe("#configLoaded(documents)", function() {
+    it("should call setConfig with ldap-authentication's data", function() {
+      var document = {name: "ldap-authentication", data: 3};
+      var documents = [
+        {name: "foo", data: 1},
+        {name: "bar", data: 2},
+        document,
+        {name: "baz", data: 4},
+      ];
+
+      var stub = sinon.stub(auth, "setConfig");
+      auth.configLoaded(documents);
+      stub.calledOnce.should.be.true;
+      stub.withArgs(document).calledOnce.should.be.true;
+      stub.restore();
+    });
+  });
 });
