@@ -223,6 +223,39 @@ describe("LDAP Authentication", function() {
         });
       });
     });
+
+    describe("(when bind is successful)", function() {
+      var fakeLDAPUser;
+      var fakeAuth;
+      var fakeFilter;
+
+      beforeEach(function() {
+        bind.yields(null);
+
+        // getLDAPUser returns a username and email in the record
+        fakeLDAPUser = {name: "Full Name", email: "email@example.com"};
+        fakeAuth = {user: "foo"};
+        fakeFilter = auth.config.clientFilter = "fake client filter"
+      });
+
+      it("should return an error if getLDAPUser has an error", function(done) {
+        getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields("foo", fakeLDAPUser);
+        auth.clientAuth(fakeAuth, function(err, user) {
+          should.not.exist(user);
+          err.should.eql("foo");
+          done();
+        });
+      });
+
+      it("should return a user if getLDAPUser returns no error", function(done) {
+        getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
+        auth.clientAuth(fakeAuth, function(err, user) {
+          should.not.exist(err);
+          user.should.eql(fakeLDAPUser);
+          done();
+        });
+      });
+    });
   });
 
   describe("#clientUI(locals)", function() {
