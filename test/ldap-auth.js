@@ -6,8 +6,9 @@ var should = require("should")
   , auth = require(libpath + "/ldap-auth")._LDAPAuth
 
 describe("LDAP Authentication", function() {
-  var createClient;
+  var createClient, findLocalUser, importLocalUser;
   var fakeClient;
+  var fakeUser;
 
   beforeEach(function() {
     // NEVER hit actual LDAP during unit tests!
@@ -17,10 +18,24 @@ describe("LDAP Authentication", function() {
     // bogus data - if tests need ldap, they should overwrite this!
     fakeClient = {};
     createClient.returns(fakeClient);
+
+    // NEVER hit the AM module functions (tests won't work if these methods aren't stubbed unless
+    // one installs the entire Ripple app and runs tests inside it)!
+    fakeUser = {
+      name: 'Joebob Smith-Wesson',
+      email: 'joebob@example.com',
+      user: 'LDAP-joebob',
+      pass: 'LDAP',
+      external: true
+    };
+    findLocalUser = sinon.stub(auth, "findLocalUser");
+    importLocalUser = sinon.stub(auth, "importLocalUser");
   });
 
   afterEach(function() {
     createClient.restore();
+    findLocalUser.restore();
+    importLocalUser.restore();
   });
 
   describe("#configMenu(menu)", function() {
