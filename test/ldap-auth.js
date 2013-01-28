@@ -88,7 +88,7 @@ describe("LDAP Authentication", function() {
     });
   });
 
-  describe("#presenterAuth(auth, cb", function() {
+  describe("#presenterAuth(auth, cb)", function() {
     var bind;
     var getLDAPUser;
 
