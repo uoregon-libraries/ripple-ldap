@@ -89,13 +89,33 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#presenterAuth(auth, cb", function() {
-    // This is tricky due to the external dependency - is there a way to override a require()
-    // statement?  If not, testing might require putting the AM require into a function we can
-    // stub out.
-    //
-    // This method (and clientAuth) really should be broken into smaller chunks anyway, so testing
-    // is simpler and code is cleaner.
-    it("Needs in-depth testing");
+    var bind;
+    beforeEach(function() {
+      bind = sinon.stub(auth, "bind");
+    });
+
+    afterEach(function() {
+      bind.restore();
+    });
+
+    describe("(when bind is unsuccessful)", function() {
+      it("should fire off an empty callback when LDAP bind credentials are invalid", function(done) {
+        bind.yields({message: "Foo", name: "InvalidCredentialsError"});
+        auth.presenterAuth({}, function(err, user) {
+          should.not.exist(err);
+          should.not.exist(user);
+          done();
+        });
+      });
+      it("should fire off a callback with an error when LDAP bind gives an unknown error", function(done) {
+        bind.yields({message: "Foo", name: "InvalidFooError"});
+        auth.presenterAuth({}, function(err, user) {
+          err.should.eql({message: "Foo", name: "InvalidFooError"});
+          should.not.exist(user);
+          done();
+        });
+      });
+    });
   });
 
   describe("#clientAuth(auth, cb", function() {
