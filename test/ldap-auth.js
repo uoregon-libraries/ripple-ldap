@@ -195,7 +195,31 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#clientAuth(auth, cb", function() {
-    it("Needs in-depth testing");
+    var bind;
+    var getLDAPUser;
+
+    beforeEach(function() {
+      bind = sinon.stub(auth, "bind");
+      getLDAPUser = sinon.stub(auth, "getLDAPUser");
+      getLDAPUser.yields({name: "Not Implemented", message: "This is stubbed, dude"}, null)
+    });
+
+    afterEach(function() {
+      bind.restore();
+      getLDAPUser.restore();
+    });
+
+    describe("(when bind is unsuccessful)", function() {
+      it("should fire off an error callback", function(done) {
+        var error = {message: "Foo", name: "InvalidCredentialsError"};
+        bind.yields(error);
+        auth.clientAuth({}, function(err, user) {
+          should.not.exist(user);
+          err.should.eql(error);
+          done();
+        });
+      });
+    });
   });
 
   describe("#clientUI(locals)", function() {
