@@ -343,7 +343,36 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#connect()", function() {
-    it("Needs in-depth testing");
+    var validate;
+    var log;
+
+    beforeEach(function() {
+      validate = sinon.stub(auth, "validateConfiguration");
+      log = sinon.spy(console, "log");
+    });
+
+    afterEach(function() {
+      validate.restore();
+      log.restore();
+    });
+
+    it("should not set client if errors are returned from validateConfiguration", function() {
+      validate.returns(["error 1", "error 2"]);
+      auth.client = null;
+      auth.connect();
+
+      should.not.exist(auth.client);
+      // The main "no good" error + one per validation error
+      log.callCount.should.eql(3);
+    });
+
+    it("should set client if there are no errors in validateConfiguration", function() {
+      validate.returns([]);
+      auth.client = null;
+      auth.connect();
+
+      auth.client.should.eql(fakeClient);
+    });
   });
 
   describe("#disconnect()", function() {
