@@ -325,6 +325,17 @@ describe("LDAP Authentication", function() {
         done();
       });
     });
+
+    it("should return search errors if an 'error' event fires off", function(done) {
+      search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields(null, emitter);
+      on.withArgs("error", sinon.match.func).yields("MASSIVE FAILURE");
+
+      auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        should.not.exist(user);
+        err.should.eql("MASSIVE FAILURE");
+        done();
+      });
+    });
   });
 
   describe("#validateConfiguration()", function() {
