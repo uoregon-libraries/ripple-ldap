@@ -9,6 +9,7 @@ describe("LDAP Authentication", function() {
   var createClient, findLocalUser, importLocalUser;
   var fakeClient;
   var fakeUser;
+  var InvalidCredentialsError = {message: "Foo", name: "InvalidCredentialsError"};
 
   beforeEach(function() {
     // NEVER hit actual LDAP during unit tests!
@@ -104,8 +105,10 @@ describe("LDAP Authentication", function() {
     });
 
     describe("(when bind is unsuccessful)", function() {
+      // Invalid credentials is only an error in LDAP - base auth system can still look for a local
+      // account for presenters
       it("should fire off an empty callback when LDAP bind credentials are invalid", function(done) {
-        bind.yields({message: "Foo", name: "InvalidCredentialsError"});
+        bind.yields(InvalidCredentialsError);
         auth.presenterAuth({}, function(err, user) {
           should.not.exist(err);
           should.not.exist(user);
@@ -210,12 +213,12 @@ describe("LDAP Authentication", function() {
     });
 
     describe("(when bind is unsuccessful)", function() {
-      it("should fire off an error callback", function(done) {
-        var error = {message: "Foo", name: "InvalidCredentialsError"};
-        bind.yields(error);
+      // Invalid credentials is an error for clients, as we don't allow local accounts for them
+      it("should fire off an error callback even on invalid credentials", function(done) {
+        bind.yields(InvalidCredentialsError);
         auth.clientAuth({}, function(err, user) {
           should.not.exist(user);
-          err.should.eql(error);
+          err.should.eql(InvalidCredentialsError);
           done();
         });
       });
