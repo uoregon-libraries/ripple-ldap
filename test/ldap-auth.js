@@ -90,12 +90,17 @@ describe("LDAP Authentication", function() {
 
   describe("#presenterAuth(auth, cb", function() {
     var bind;
+    var getLDAPUser;
+
     beforeEach(function() {
       bind = sinon.stub(auth, "bind");
+      getLDAPUser = sinon.stub(auth, "getLDAPUser");
+      getLDAPUser.yields({name: "Not Implemented", message: "This is stubbed, dude"}, null)
     });
 
     afterEach(function() {
       bind.restore();
+      getLDAPUser.restore();
     });
 
     describe("(when bind is unsuccessful)", function() {
@@ -113,6 +118,33 @@ describe("LDAP Authentication", function() {
           err.should.eql({message: "Foo", name: "InvalidFooError"});
           should.not.exist(user);
           done();
+        });
+      });
+    });
+
+    describe("(when bind is successful)", function() {
+      beforeEach(function() {
+        bind.yields(null);
+      });
+
+      describe("(when a local user is present)", function() {
+        beforeEach(function() {
+          findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, fakeUser);
+        });
+
+        it("shouldn't call getLDAPUser", function(done) {
+          auth.presenterAuth({user: "foo"}, function(err, user) {
+            getLDAPUser.callCount.should.eql(0);
+            done();
+          });
+        });
+
+        it("should find and return a local user with LDAP-xxx as the username", function(done) {
+          auth.presenterAuth({user: "foo"}, function(err, user) {
+            should.not.exist(err);
+            user.should.eql(fakeUser);
+            done();
+          });
         });
       });
     });
