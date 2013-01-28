@@ -147,6 +147,50 @@ describe("LDAP Authentication", function() {
           });
         });
       });
+
+      describe("(when a local user is not present)", function() {
+        var fakeLDAPUser;
+        var fakeAuth;
+        var fakeFilter;
+
+        beforeEach(function() {
+          // findLocalUser returns no error, but also no user record
+          findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, null);
+
+          // getLDAPUser returns a username and email in the record
+          fakeLDAPUser = {name: "Full Name", email: "email@example.com"};
+          fakeAuth = {user: "foo"};
+          fakeFilter = auth.config.presenterFilter = "fake presenter filter"
+          getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
+        });
+
+        it("should import a local user with expected data", function(done) {
+          // Make sure import doesn't fail, though we don't care about what it returns
+          importLocalUser.yields(null, {});
+
+          auth.presenterAuth(fakeAuth, function(err, user) {
+            importLocalUser.callCount.should.eql(1);
+
+            // Verify data one piece at a time
+            var calledUser = importLocalUser.getCall(0).args[0];
+            calledUser.name.should.eql(fakeLDAPUser.name);
+            calledUser.email.should.eql(fakeLDAPUser.email);
+            calledUser.user.should.eql("LDAP-" + fakeAuth.user);
+            calledUser.pass.should.eql("LDAP");
+            calledUser.external.should.eql(true);
+            done();
+          });
+        });
+
+        it("should call the callback with importLocalUser's user data", function(done) {
+          importLocalUser.yields(null, {name: "foooooo"});
+          auth.presenterAuth(fakeAuth, function(err, user) {
+            should.not.exist(err);
+            user.should.eql({name: "foooooo"});
+            done();
+          });
+        });
+      });
     });
   });
 
