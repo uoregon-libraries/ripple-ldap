@@ -10,10 +10,10 @@ test-unit:
 		--reporter $(REPORTER) \
 		$(MOCHA_OPTS)
 
-test-cov: lib-cov/plugin.js
+test-cov: lib-cov/ldap-auth.js
 	@PLUGIN_COV=1 $(MAKE) test REPORTER=html-cov > coverage.html
 
-lib-cov/plugin.js: lib/plugin.js
+lib-cov/ldap-auth.js: lib/ldap-auth.js
 	@rm -rf lib-cov
 	@jscoverage lib lib-cov
 
