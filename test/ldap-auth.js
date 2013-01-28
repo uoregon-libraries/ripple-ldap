@@ -266,6 +266,67 @@ describe("LDAP Authentication", function() {
     });
   });
 
+  describe("#getLDAPUser(auth, filter, callback)", function() {
+    var search;
+    var emitter;
+    var fakeEntry;
+    var fakeDN;
+    var on;
+
+    beforeEach(function() {
+      // Hack in a fake client
+      auth.client = { search: function(){} }
+
+      // Create an event emitter for the fake LDAP to spit out on search
+      emitter = { on: function(){} };
+
+      // Stub search and hack some search config to allow easier yields in tests
+      search = sinon.stub(auth.client, "search");
+      fakeDN = auth.config.baseDN = "fake base DN";
+      fakeEntry = {object: {displayName: "Joebob Smith-Wesson", mail: "joebob@example.com"}};
+
+      // Stub emitter's "on" so we aren't trying to send real events through
+      //
+      // Changing the order of event handlers will make this fail, so we want the order to stay
+      // as-is unless we can come up with a test that's using real events, but is still clean
+      on = sinon.stub(emitter, "on");
+      on.withArgs("searchEntry", sinon.match.func).yields(fakeEntry);
+      on.withArgs("end", sinon.match.func).yields(true);
+    });
+
+    afterEach(function() {
+      search.restore();
+    });
+
+    it("should call client.search with basedn config and passed-in filter, replacing {{user id}}", function(done) {
+      search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields(null, emitter);
+
+      auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        done();
+      });
+    });
+
+    it("should return any errors from search", function(done) {
+      search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields("error", emitter);
+
+      auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        should.not.exist(user);
+        err.should.eql("error");
+        done();
+      });
+    });
+
+    it("should return the LDAP user if no errors occurred", function(done) {
+      search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields(null, emitter);
+
+      auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        user.name.should.eql(fakeEntry.object.displayName);
+        user.email.should.eql(fakeEntry.object.mail);
+        done();
+      });
+    });
+  });
+
   describe("#validateConfiguration()", function() {
     it("Needs in-depth testing");
   });
