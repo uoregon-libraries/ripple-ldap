@@ -407,6 +407,24 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#setConfig(data)", function() {
-    it("Needs in-depth testing");
+    var knownFields = [ "hostname", "bindDNFormat", "baseDN", "presenterFilter", "clientFilter" ];
+
+    it("Copies all known fields", function() {
+      var data = {};
+      for (var x = 0; x < knownFields.length; x++) {
+        data[knownFields[x]] = x;
+      }
+
+      auth.setConfig(data);
+
+      for (var x = 0; x < knownFields.length; x++) {
+        auth.config[knownFields[x]].should.eql(x);
+      }
+    });
+
+    it("Ignores unknown fields", function() {
+      auth.setConfig({foo: "bar"});
+      should.not.exist(auth.config.foo);
+    });
   });
 });
