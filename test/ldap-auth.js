@@ -302,6 +302,8 @@ describe("LDAP Authentication", function() {
       search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields(null, emitter);
 
       auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        should.not.exist(err);
+        user.should.eql({name: fakeEntry.object.displayName, email: fakeEntry.object.mail});
         done();
       });
     });
