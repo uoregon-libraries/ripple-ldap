@@ -341,7 +341,83 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#validateConfiguration()", function() {
-    it("Needs in-depth testing");
+    // This should contain a minimal good configuration example
+    var goodConfig = {
+      hostname:         "ldaps://ldap.yoursite.com",
+      bindDNFormat:     "{{user id}}@ldap.yoursite.com",
+      baseDN:           "DC=ldap,DC=yoursite,DC=com",
+      presenterFilter:  "(&(uid={{user id}})(objectClass=person))",
+      clientFilter:     "(&(uid={{user id}})(objectClass=person))",
+    };
+
+    // This should contain all required fields and expected error substrings to ease testing
+    var required = {
+      hostname:         /hostname/i,
+      bindDNFormat:     /bind dn format/i,
+      baseDN:           /base dn/i,
+      presenterFilter:  /presenter filter/i,
+      clientFilter:     /client filter/i,
+    };
+
+    it("Succeeds with good config", function() {
+      auth.config = goodConfig;
+      auth.validateConfiguration().should.eql([]);
+    });
+
+    it("Fails with empty config", function() {
+      auth.config = null;
+      var errors = auth.validateConfiguration();
+      errors.length.should.eql(1);
+    });
+
+    function clone(obj) {
+      var target = {};
+      for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+          target[i] = obj[i];
+        }
+      }
+      return target;
+    }
+
+    // Loop required fields and build a dynamic test for each
+    for (var field in required) {
+      if (required.hasOwnProperty(field)) {
+        // Closure magic ensures the test is getting the correct field
+        it("Requires " + field + " to be set", function(_field) {
+          return function() {
+            auth.config = clone(goodConfig);
+            auth.config[_field] = null;
+            var errors = auth.validateConfiguration();
+            errors.length.should.eql(1);
+            errors[0].should.match(required[_field]);
+          }
+        }(field));
+      }
+    }
+
+    // These elements require the magic USER_ID string
+    var userIDRequired = {
+      bindDNFormat:     /bindDN/i,
+      presenterFilter:  /presenter filter/i,
+      clientFilter:     /client filter/i
+    };
+
+    // Loop USER_ID fields and build a dynamic test for each
+    for (var field in userIDRequired) {
+      if (userIDRequired.hasOwnProperty(field)) {
+        // Closure magic ensures the test is getting the correct field
+        it("Requires " + field + " to have the magic string", function(_field) {
+          return function() {
+            auth.config = clone(goodConfig);
+            auth.config[_field] = "Filled out but no magic string";
+            var errors = auth.validateConfiguration();
+            errors.length.should.eql(1);
+            errors[0].should.match(userIDRequired[_field]);
+          }
+        }(field));
+      }
+    }
   });
 
   describe("#connect()", function() {
