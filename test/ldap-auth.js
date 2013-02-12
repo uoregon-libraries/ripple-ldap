@@ -376,7 +376,34 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#disconnect()", function() {
-    it("Needs in-depth testing");
+    var log;
+
+    beforeEach(function() {
+      log = sinon.spy(console, "log");
+    });
+
+    afterEach(function() {
+      log.restore();
+    });
+
+    describe("(when the client is set)", function() {
+      it("Shouldn't do anything", function() {
+        // We validate that log isn't called, but the real test here is that nothing crashes
+        auth.client = null;
+        auth.disconnect();
+        log.callCount.should.eql(0);
+      });
+    });
+
+    describe("(when the client is null)", function() {
+      it("Should call unbind", function() {
+        auth.client = { unbind: function(){} };
+        var spy = sinon.spy(auth.client, "unbind");
+        auth.disconnect();
+        should.not.exist(auth.client);
+        spy.callCount.should.eql(1);
+      });
+    });
   });
 
   describe("#setConfig(data)", function() {
