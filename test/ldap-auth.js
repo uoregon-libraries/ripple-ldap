@@ -167,6 +167,31 @@ describe("LDAP Authentication", function() {
           getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
         });
 
+        describe("(when getLDAPUser has an error)", function() {
+          it("should call callback with the error", function(done) {
+            // We can't overwrite a previous stub, it seems, so we have to re-stub for this specific
+            // error situation
+            findLocalUser.withArgs("LDAP-bar", sinon.match.func).yields(null, null);
+            getLDAPUser.withArgs({user: "bar"}, fakeFilter, sinon.match.func).yields("error in getLDAPUser");
+            auth.presenterAuth({user: "bar"}, function(err, user) {
+              err.should.eql("error in getLDAPUser");
+              should.not.exist(user);
+              done();
+            });
+          });
+        });
+
+        describe("(when importLocalUser has an error)", function() {
+          it("should call callback with the error", function(done) {
+            importLocalUser.yields("error in importLocalUser");
+            auth.presenterAuth(fakeAuth, function(err, user) {
+              err.should.eql("error in importLocalUser");
+              should.not.exist(user);
+              done();
+            });
+          });
+        });
+
         it("should import a local user with expected data", function(done) {
           // Make sure import doesn't fail, though we don't care about what it returns
           importLocalUser.yields(null, {});
