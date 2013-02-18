@@ -167,6 +167,31 @@ describe("LDAP Authentication", function() {
           getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
         });
 
+        describe("(when getLDAPUser has an error)", function() {
+          it("should call callback with the error", function(done) {
+            // We can't overwrite a previous stub, it seems, so we have to re-stub for this specific
+            // error situation
+            findLocalUser.withArgs("LDAP-bar", sinon.match.func).yields(null, null);
+            getLDAPUser.withArgs({user: "bar"}, fakeFilter, sinon.match.func).yields("error in getLDAPUser");
+            auth.presenterAuth({user: "bar"}, function(err, user) {
+              err.should.eql("error in getLDAPUser");
+              should.not.exist(user);
+              done();
+            });
+          });
+        });
+
+        describe("(when importLocalUser has an error)", function() {
+          it("should call callback with the error", function(done) {
+            importLocalUser.yields("error in importLocalUser");
+            auth.presenterAuth(fakeAuth, function(err, user) {
+              err.should.eql("error in importLocalUser");
+              should.not.exist(user);
+              done();
+            });
+          });
+        });
+
         it("should import a local user with expected data", function(done) {
           // Make sure import doesn't fail, though we don't care about what it returns
           importLocalUser.yields(null, {});
@@ -302,6 +327,8 @@ describe("LDAP Authentication", function() {
       search.withArgs(fakeDN, {filter: "filter test_id", scope: "sub"}, sinon.match.func).yields(null, emitter);
 
       auth.getLDAPUser({user: "test_id"}, "filter {{user id}}", function(err, user) {
+        should.not.exist(err);
+        user.should.eql({name: fakeEntry.object.displayName, email: fakeEntry.object.mail});
         done();
       });
     });
@@ -339,7 +366,83 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#validateConfiguration()", function() {
-    it("Needs in-depth testing");
+    // This should contain a minimal good configuration example
+    var goodConfig = {
+      hostname:         "ldaps://ldap.yoursite.com",
+      bindDNFormat:     "{{user id}}@ldap.yoursite.com",
+      baseDN:           "DC=ldap,DC=yoursite,DC=com",
+      presenterFilter:  "(&(uid={{user id}})(objectClass=person))",
+      clientFilter:     "(&(uid={{user id}})(objectClass=person))",
+    };
+
+    // This should contain all required fields and expected error substrings to ease testing
+    var required = {
+      hostname:         /hostname/i,
+      bindDNFormat:     /bind dn format/i,
+      baseDN:           /base dn/i,
+      presenterFilter:  /presenter filter/i,
+      clientFilter:     /client filter/i,
+    };
+
+    it("Succeeds with good config", function() {
+      auth.config = goodConfig;
+      auth.validateConfiguration().should.eql([]);
+    });
+
+    it("Fails with empty config", function() {
+      auth.config = null;
+      var errors = auth.validateConfiguration();
+      errors.length.should.eql(1);
+    });
+
+    function clone(obj) {
+      var target = {};
+      for (var i in obj) {
+        if (obj.hasOwnProperty(i)) {
+          target[i] = obj[i];
+        }
+      }
+      return target;
+    }
+
+    // Loop required fields and build a dynamic test for each
+    for (var field in required) {
+      if (required.hasOwnProperty(field)) {
+        // Closure magic ensures the test is getting the correct field
+        it("Requires " + field + " to be set", function(_field) {
+          return function() {
+            auth.config = clone(goodConfig);
+            auth.config[_field] = null;
+            var errors = auth.validateConfiguration();
+            errors.length.should.eql(1);
+            errors[0].should.match(required[_field]);
+          }
+        }(field));
+      }
+    }
+
+    // These elements require the magic USER_ID string
+    var userIDRequired = {
+      bindDNFormat:     /bindDN/i,
+      presenterFilter:  /presenter filter/i,
+      clientFilter:     /client filter/i
+    };
+
+    // Loop USER_ID fields and build a dynamic test for each
+    for (var field in userIDRequired) {
+      if (userIDRequired.hasOwnProperty(field)) {
+        // Closure magic ensures the test is getting the correct field
+        it("Requires " + field + " to have the magic string", function(_field) {
+          return function() {
+            auth.config = clone(goodConfig);
+            auth.config[_field] = "Filled out but no magic string";
+            var errors = auth.validateConfiguration();
+            errors.length.should.eql(1);
+            errors[0].should.match(userIDRequired[_field]);
+          }
+        }(field));
+      }
+    }
   });
 
   describe("#connect()", function() {
@@ -376,10 +479,132 @@ describe("LDAP Authentication", function() {
   });
 
   describe("#disconnect()", function() {
-    it("Needs in-depth testing");
+    var log;
+
+    beforeEach(function() {
+      log = sinon.spy(console, "log");
+    });
+
+    afterEach(function() {
+      log.restore();
+    });
+
+    describe("(when the client is set)", function() {
+      it("Shouldn't do anything", function() {
+        // We validate that log isn't called, but the real test here is that nothing crashes
+        auth.client = null;
+        auth.disconnect();
+        log.callCount.should.eql(0);
+      });
+    });
+
+    describe("(when the client is null)", function() {
+      it("Should call unbind", function() {
+        auth.client = { unbind: function(){} };
+        var spy = sinon.spy(auth.client, "unbind");
+        auth.disconnect();
+        should.not.exist(auth.client);
+        spy.callCount.should.eql(1);
+      });
+    });
   });
 
   describe("#setConfig(data)", function() {
-    it("Needs in-depth testing");
+    var knownFields = [ "hostname", "bindDNFormat", "baseDN", "presenterFilter", "clientFilter" ];
+
+    it("Copies all known fields", function() {
+      var data = {};
+      for (var x = 0; x < knownFields.length; x++) {
+        data[knownFields[x]] = x;
+      }
+
+      auth.setConfig(data);
+
+      for (var x = 0; x < knownFields.length; x++) {
+        auth.config[knownFields[x]].should.eql(x);
+      }
+    });
+
+    it("Ignores unknown fields", function() {
+      auth.setConfig({foo: "bar"});
+      should.not.exist(auth.config.foo);
+    });
+  });
+
+  describe("#bind", function() {
+    var connect;
+    var ldapBind;
+    var fakeAuth;
+
+    beforeEach(function() {
+      auth.client = fakeClient;
+      fakeClient.bind = function() {};
+      auth.config.bindDNFormat = "foo";
+      fakeAuth = {user: "user", password: "pass"};
+
+      connect = sinon.stub(auth, "connect");
+      ldapBind = sinon.stub(fakeClient, "bind");
+
+      // Assume success unless a test needs to verify failure
+      ldapBind.yields(null);
+    });
+
+    afterEach(function() {
+      connect.restore();
+      ldapBind.restore();
+    });
+
+    it("should call connect()", function(done) {
+      auth.bind(fakeAuth, function() {
+        connect.callCount.should.eql(1);
+        done();
+      });
+    });
+
+    it("should call callback with an error when the client cannot be created", function(done) {
+      auth.client = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("MissingConnection");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is null", function(done) {
+      auth.bind(null, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is missing user", function(done) {
+      fakeAuth.user = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is missing password", function(done) {
+      fakeAuth.password = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error if ldap bind returns an error", function(done) {
+      ldapBind.withArgs("foo", "pass").yields({name: "foo"});
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("foo");
+        done();
+      });
+    });
+
+    it("should have no error if ldap bind succeeds", function(done) {
+      auth.bind(fakeAuth, function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
   });
 });
