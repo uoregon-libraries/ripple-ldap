@@ -530,4 +530,81 @@ describe("LDAP Authentication", function() {
       should.not.exist(auth.config.foo);
     });
   });
+
+  describe("#bind", function() {
+    var connect;
+    var ldapBind;
+    var fakeAuth;
+
+    beforeEach(function() {
+      auth.client = fakeClient;
+      fakeClient.bind = function() {};
+      auth.config.bindDNFormat = "foo";
+      fakeAuth = {user: "user", password: "pass"};
+
+      connect = sinon.stub(auth, "connect");
+      ldapBind = sinon.stub(fakeClient, "bind");
+
+      // Assume success unless a test needs to verify failure
+      ldapBind.yields(null);
+    });
+
+    afterEach(function() {
+      connect.restore();
+      ldapBind.restore();
+    });
+
+    it("should call connect()", function(done) {
+      auth.bind(fakeAuth, function() {
+        connect.callCount.should.eql(1);
+        done();
+      });
+    });
+
+    it("should call callback with an error when the client cannot be created", function(done) {
+      auth.client = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("MissingConnection");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is null", function(done) {
+      auth.bind(null, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is missing user", function(done) {
+      fakeAuth.user = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error when auth is missing password", function(done) {
+      fakeAuth.password = null;
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("BadCredentials");
+        done();
+      });
+    });
+
+    it("should call callback with an error if ldap bind returns an error", function(done) {
+      ldapBind.withArgs("foo", "pass").yields({name: "foo"});
+      auth.bind(fakeAuth, function(err) {
+        err.name.should.eql("foo");
+        done();
+      });
+    });
+
+    it("should have no error if ldap bind succeeds", function(done) {
+      auth.bind(fakeAuth, function(err) {
+        should.not.exist(err);
+        done();
+      });
+    });
+  });
 });
