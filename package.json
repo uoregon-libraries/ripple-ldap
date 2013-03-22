@@ -1,0 +1,16 @@
+{
+  "author": "UO Staff",
+  "description": "LDAP Authentication: allows users to log in to LDAP, falling back to local authentication when LDAP is not configured or cannot find the user",
+  "name": "ldap-authentication",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ldapjs": "0.5.7"
+  },
+
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*",
+    "sinon": "*"
+  }
+}
