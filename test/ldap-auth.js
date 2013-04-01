@@ -62,33 +62,6 @@ describe("LDAP Authentication", function() {
     });
   });
 
-  describe("#menuSave", function() {
-    it("should call setConfig with data passed in", function() {
-      var stub = sinon.stub(auth, "setConfig");
-      auth.menuSave({foo: "bar"});
-      stub.withArgs({foo: "bar"}).calledOnce.should.be.true;
-      stub.restore();
-    });
-  });
-
-  describe("#configLoaded(documents)", function() {
-    it("should call setConfig with ldap-authentication's data", function() {
-      var document = {name: "ldap-authentication", data: 3};
-      var documents = [
-        {name: "foo", data: 1},
-        {name: "bar", data: 2},
-        document,
-        {name: "baz", data: 4},
-      ];
-
-      var stub = sinon.stub(auth, "setConfig");
-      auth.configLoaded(documents);
-      stub.calledOnce.should.be.true;
-      stub.withArgs(document).calledOnce.should.be.true;
-      stub.restore();
-    });
-  });
-
   describe("#presenterAuth(auth, cb)", function() {
     var bind;
     var getLDAPUser;
@@ -532,7 +505,7 @@ describe("LDAP Authentication", function() {
     });
   });
 
-  describe("#setConfig(data)", function() {
+  describe("#loadConfig(data)", function() {
     var knownFields = [ "hostname", "bindDNFormat", "baseDN", "presenterFilter", "clientFilter" ];
 
     it("Copies all known fields", function() {
@@ -541,7 +514,7 @@ describe("LDAP Authentication", function() {
         data[knownFields[x]] = x;
       }
 
-      auth.setConfig(data);
+      auth.loadConfig(data);
 
       for (var x = 0; x < knownFields.length; x++) {
         auth.config[knownFields[x]].should.eql(x);
@@ -549,7 +522,7 @@ describe("LDAP Authentication", function() {
     });
 
     it("Ignores unknown fields", function() {
-      auth.setConfig({foo: "bar"});
+      auth.loadConfig({foo: "bar"});
       should.not.exist(auth.config.foo);
     });
   });
