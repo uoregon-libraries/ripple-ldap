@@ -124,7 +124,7 @@ describe("LDAP Authentication", function() {
       // account for presenters
       it("should fire off an empty callback when LDAP bind credentials are invalid", function(done) {
         bind.yields(InvalidCredentialsError);
-        auth.presenterAuth({}, function(err, user) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
           should.not.exist(err);
           should.not.exist(user);
           done();
@@ -132,7 +132,7 @@ describe("LDAP Authentication", function() {
       });
       it("should fire off a callback with an error when LDAP bind gives an unknown error", function(done) {
         bind.yields({message: "Foo", name: "InvalidFooError"});
-        auth.presenterAuth({}, function(err, user) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
           err.should.eql({message: "Foo", name: "InvalidFooError"});
           should.not.exist(user);
           done();
@@ -147,18 +147,18 @@ describe("LDAP Authentication", function() {
 
       describe("(when a local user is present)", function() {
         beforeEach(function() {
-          findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, fakeUser);
+          findLocalUser.withArgs("LDAP-" + presenterLogin.user, sinon.match.func).yields(null, fakeUser);
         });
 
         it("shouldn't call getLDAPUser", function(done) {
-          auth.presenterAuth({user: "foo"}, function(err, user) {
+          auth.presenterAuth(presenterLogin, function(err, user) {
             getLDAPUser.callCount.should.eql(0);
             done();
           });
         });
 
-        it("should find and return a local user with LDAP-xxx as the username", function(done) {
-          auth.presenterAuth({user: "foo"}, function(err, user) {
+        it("should find and return a local user", function(done) {
+          auth.presenterAuth(presenterLogin, function(err, user) {
             should.not.exist(err);
             user.should.eql(fakeUser);
             done();
