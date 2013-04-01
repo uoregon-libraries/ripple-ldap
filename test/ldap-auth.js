@@ -92,11 +92,26 @@ describe("LDAP Authentication", function() {
   describe("#presenterAuth(auth, cb)", function() {
     var bind;
     var getLDAPUser;
+    var fakeLDAPUser;
+    var fakeAuth;
+    var fakeFilter;
 
     beforeEach(function() {
       bind = sinon.stub(auth, "bind");
+
+      // Stub getLDAPUser since it is critical to success of presenter login
       getLDAPUser = sinon.stub(auth, "getLDAPUser");
+
+      // Set up fake data
+      fakeAuth = {user: "foo"};
+      fakeLDAPUser = {name: "Full Name", email: "email@example.com"};
+      fakeFilter = auth.config.presenterFilter = "fake presenter filter"
+
+      // Default to an error response so it's clear when we don't pass in the right args
       getLDAPUser.yields({name: "Not Implemented", message: "This is stubbed, dude"}, null)
+
+      // When presenter auth is present, we yield the good user data
+      getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
     });
 
     afterEach(function() {
@@ -152,19 +167,9 @@ describe("LDAP Authentication", function() {
       });
 
       describe("(when a local user is not present)", function() {
-        var fakeLDAPUser;
-        var fakeAuth;
-        var fakeFilter;
-
         beforeEach(function() {
           // findLocalUser returns no error, but also no user record
           findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, null);
-
-          // getLDAPUser returns a username and email in the record
-          fakeLDAPUser = {name: "Full Name", email: "email@example.com"};
-          fakeAuth = {user: "foo"};
-          fakeFilter = auth.config.presenterFilter = "fake presenter filter"
-          getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
         });
 
         describe("(when getLDAPUser has an error)", function() {
