@@ -92,11 +92,26 @@ describe("LDAP Authentication", function() {
   describe("#presenterAuth(auth, cb)", function() {
     var bind;
     var getLDAPUser;
+    var presenterLDAPUser;
+    var presenterLogin;
+    var fakeFilter;
 
     beforeEach(function() {
       bind = sinon.stub(auth, "bind");
+
+      // Stub getLDAPUser since it is critical to success of presenter login
       getLDAPUser = sinon.stub(auth, "getLDAPUser");
+
+      // Set up fake data
+      presenterLogin = {user: "presenter"};
+      presenterLDAPUser = {name: "Full Name", email: "email@example.com"};
+      fakeFilter = auth.config.presenterFilter = "fake presenter filter"
+
+      // Default to an error response so it's clear when we don't pass in the right args
       getLDAPUser.yields({name: "Not Implemented", message: "This is stubbed, dude"}, null)
+
+      // When presenter auth is present, we yield the good user data
+      getLDAPUser.withArgs(presenterLogin, fakeFilter, sinon.match.func).yields(null, presenterLDAPUser);
     });
 
     afterEach(function() {
@@ -109,7 +124,7 @@ describe("LDAP Authentication", function() {
       // account for presenters
       it("should fire off an empty callback when LDAP bind credentials are invalid", function(done) {
         bind.yields(InvalidCredentialsError);
-        auth.presenterAuth({}, function(err, user) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
           should.not.exist(err);
           should.not.exist(user);
           done();
@@ -117,7 +132,7 @@ describe("LDAP Authentication", function() {
       });
       it("should fire off a callback with an error when LDAP bind gives an unknown error", function(done) {
         bind.yields({message: "Foo", name: "InvalidFooError"});
-        auth.presenterAuth({}, function(err, user) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
           err.should.eql({message: "Foo", name: "InvalidFooError"});
           should.not.exist(user);
           done();
@@ -130,20 +145,38 @@ describe("LDAP Authentication", function() {
         bind.yields(null);
       });
 
-      describe("(when a local user is present)", function() {
+      // No user returned would typically mean the LDAP filter excluded this person - somebody we
+      // don't want to be allowed to run a presentation
+      describe("(when user isn't in LDAP)", function() {
+        var clientLogin = {user: "client"};
+
         beforeEach(function() {
-          findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, fakeUser);
+          getLDAPUser.withArgs(clientLogin).yields(null, {});
         });
 
-        it("shouldn't call getLDAPUser", function(done) {
-          auth.presenterAuth({user: "foo"}, function(err, user) {
-            getLDAPUser.callCount.should.eql(0);
+        it("shouldn't call importLocalUser", function(done) {
+          auth.presenterAuth(clientLogin, function(err, user) {
+            importLocalUser.callCount.should.eql(0);
             done();
           });
         });
 
-        it("should find and return a local user with LDAP-xxx as the username", function(done) {
-          auth.presenterAuth({user: "foo"}, function(err, user) {
+        it("should fire off an empty callback", function(done) {
+          auth.presenterAuth(clientLogin, function(err, user) {
+            should.not.exist(err);
+            should.not.exist(user);
+            done();
+          });
+        });
+      });
+
+      describe("(when a local user is present)", function() {
+        beforeEach(function() {
+          findLocalUser.withArgs("LDAP-" + presenterLogin.user, sinon.match.func).yields(null, fakeUser);
+        });
+
+        it("should find and return a local user", function(done) {
+          auth.presenterAuth(presenterLogin, function(err, user) {
             should.not.exist(err);
             user.should.eql(fakeUser);
             done();
@@ -152,19 +185,9 @@ describe("LDAP Authentication", function() {
       });
 
       describe("(when a local user is not present)", function() {
-        var fakeLDAPUser;
-        var fakeAuth;
-        var fakeFilter;
-
         beforeEach(function() {
           // findLocalUser returns no error, but also no user record
-          findLocalUser.withArgs("LDAP-foo", sinon.match.func).yields(null, null);
-
-          // getLDAPUser returns a username and email in the record
-          fakeLDAPUser = {name: "Full Name", email: "email@example.com"};
-          fakeAuth = {user: "foo"};
-          fakeFilter = auth.config.presenterFilter = "fake presenter filter"
-          getLDAPUser.withArgs(fakeAuth, fakeFilter, sinon.match.func).yields(null, fakeLDAPUser);
+          findLocalUser.withArgs("LDAP-" + presenterLogin.user, sinon.match.func).yields(null, null);
         });
 
         describe("(when getLDAPUser has an error)", function() {
@@ -184,7 +207,7 @@ describe("LDAP Authentication", function() {
         describe("(when importLocalUser has an error)", function() {
           it("should call callback with the error", function(done) {
             importLocalUser.yields("error in importLocalUser");
-            auth.presenterAuth(fakeAuth, function(err, user) {
+            auth.presenterAuth(presenterLogin, function(err, user) {
               err.should.eql("error in importLocalUser");
               should.not.exist(user);
               done();
@@ -196,14 +219,14 @@ describe("LDAP Authentication", function() {
           // Make sure import doesn't fail, though we don't care about what it returns
           importLocalUser.yields(null, {});
 
-          auth.presenterAuth(fakeAuth, function(err, user) {
+          auth.presenterAuth(presenterLogin, function(err, user) {
             importLocalUser.callCount.should.eql(1);
 
             // Verify data one piece at a time
             var calledUser = importLocalUser.getCall(0).args[0];
-            calledUser.name.should.eql(fakeLDAPUser.name);
-            calledUser.email.should.eql(fakeLDAPUser.email);
-            calledUser.user.should.eql("LDAP-" + fakeAuth.user);
+            calledUser.name.should.eql(presenterLDAPUser.name);
+            calledUser.email.should.eql(presenterLDAPUser.email);
+            calledUser.user.should.eql("LDAP-" + presenterLogin.user);
             calledUser.pass.should.eql("LDAP");
             calledUser.external.should.eql(true);
             done();
@@ -212,7 +235,7 @@ describe("LDAP Authentication", function() {
 
         it("should call the callback with importLocalUser's user data", function(done) {
           importLocalUser.yields(null, {name: "foooooo"});
-          auth.presenterAuth(fakeAuth, function(err, user) {
+          auth.presenterAuth(presenterLogin, function(err, user) {
             should.not.exist(err);
             user.should.eql({name: "foooooo"});
             done();
