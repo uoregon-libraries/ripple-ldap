@@ -119,6 +119,32 @@ describe("LDAP Authentication", function() {
       getLDAPUser.restore();
     });
 
+    // No user returned would typically mean the LDAP filter excluded this person
+    describe("(when user isn't returned by LDAP)", function() {
+      beforeEach(function() {
+        getLDAPUser.yields(null, {});
+      });
+
+      it("shouldn't call importLocalUser", function(done) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
+          importLocalUser.callCount.should.eql(0);
+          done();
+        });
+      });
+
+      // We don't want a local admin denied just because he's not a presenter in LDAP.  For
+      // instance, student needs to present so admin adds student to local db.  Student chooses
+      // the same password she uses in LDAP.  We need the local account to override the LDAP filter
+      // exclusion so she can still present.  i.e., local always trumps LDAP.
+      it("should fire off an empty callback", function(done) {
+        auth.presenterAuth(presenterLogin, function(err, user) {
+          should.not.exist(err);
+          should.not.exist(user);
+          done();
+        });
+      });
+    });
+
     describe("(when bind is unsuccessful)", function() {
       // Invalid credentials is only an error in LDAP - base auth system can still look for a local
       // account for presenters
