@@ -176,13 +176,6 @@ describe("LDAP Authentication", function() {
           findLocalUser.withArgs("LDAP-" + presenterLogin.user, sinon.match.func).yields(null, fakeUser);
         });
 
-        it("shouldn't call getLDAPUser", function(done) {
-          auth.presenterAuth(presenterLogin, function(err, user) {
-            getLDAPUser.callCount.should.eql(0);
-            done();
-          });
-        });
-
         it("should find and return a local user", function(done) {
           auth.presenterAuth(presenterLogin, function(err, user) {
             should.not.exist(err);
