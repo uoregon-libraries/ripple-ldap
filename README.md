@@ -82,6 +82,16 @@ create presentations.
 This field tells LDAP exactly how to determine who is allowed to log in as a member of the audience.
 As with the presenter filter, the value will vary greatly depending on your institutional needs.
 
+
+Is it working?
+--------------
+
+The easiest way to tell if the LDAP plugin is installed and working is by looking at the Ripple
+login page.  The audience area should have a space for a username and password in addition to the
+room:
+
+![Post-install login page][login-page]
+
 [0]: https://github.com/uoregon-libraries/ripple  "Ripple on github"
 [1]: https://github.com/uoregon-libraries/ripple-ldap "LDAP plugin on github"
 
