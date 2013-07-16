@@ -49,7 +49,38 @@ The configuration screen should look something like this:
 
 ![LDAP Configuration][ldap-config]
 
+The configuration page must be filled in fully for the plugin to run.  You may need somebody
+familiar with your institution's LDAP system to get the appropriate values filled in.  Settings
+are described in more detail below:
 
+### LDAP Host
+
+Enter the LDAP hostname.  This is often `ldap.yourdomain.com` or, in the case of Active Directory
+authentication, `ad.yourdomain.com`
+
+### Bind DN Format
+
+This field uses a replacement template, `{{user id}}`.  This will be replaced by the user's login
+name when contacting the LDAP server.  This must be set to the proper value for your particular
+LDAP setup.  This might be something like `CN={{user id}}` or `{{user id}}@ad.yourdomain.com`.
+
+### Base DN
+
+This field is another required LDAP setting, and again depends on your institution.  It is often
+set to something like `DC=ldap,DC=yourdomain,DC=com`.
+
+### Presenter Filter
+
+This field tells LDAP exactly how to determine who is allowed to log in as a presenter, and will
+vary greatly depending on your LDAP server and how you wish to restrict these logins.  A very basic
+setting might be `(&(CN={{user id}})(objectClass=person))`, though this may or may not work in your
+institution.  This field should be carefully chosen to ensure only specific groups are able to
+create presentations.
+
+### Client Filter
+
+This field tells LDAP exactly how to determine who is allowed to log in as a member of the audience.
+As with the presenter filter, the value will vary greatly depending on your institutional needs.
 
 [0]: https://github.com/uoregon-libraries/ripple  "Ripple on github"
 [1]: https://github.com/uoregon-libraries/ripple-ldap "LDAP plugin on github"
