@@ -38,5 +38,24 @@ Installation and Use
 Plugin Configuration Page (within [Ripple][0])
 ---------------------
 
+Once the LDAP plugin has been added to the plugins directory of Ripple, an admin can configure it.
+The LDAP plugin listing will display within Ripple's plugin page:
+
+![Ripple Plugins][plugins]
+
+Turn on the plugin by clicking the "on" button: ![On][on-button] and then "Configure": ![Configure][configure-button]
+
+The configuration screen should look something like this:
+
+![LDAP Configuration][ldap-config]
+
+
+
 [0]: https://github.com/uoregon-libraries/ripple  "Ripple on github"
 [1]: https://github.com/uoregon-libraries/ripple-ldap "LDAP plugin on github"
+
+[plugins]: doc-images/plugin-listing.png "Plugins listing"
+[on-button]: doc-images/on-button.png "Plugin 'on' button"
+[configure-button]: doc-images/configure-button.png "Plugin 'configure' button"
+[ldap-config]: doc-images/ldap-configuration.png "LDAP Plugin configuration page"
+[login-page]: doc-images/post-install-login-page.png "Login page after LDAP install"
