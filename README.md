@@ -3,7 +3,7 @@ Ripple-LDAP: plugin for [Ripple][0]
 
 ripple-ldap is a middleware plugin for Ripple, an audience response system built off of node.js.
 
-This module modifies the way presenters, administrators, and audience members run the application.
+This module modifies the way presenters, administrators, and audience members log in to the application.
 In the case of audience members, an LDAP login is required to participate.  For presenters, the
 LDAP system can be used to allow users to present in Ripple without having to have an account
 created for them by an administrator.
