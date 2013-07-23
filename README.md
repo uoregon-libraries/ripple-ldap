@@ -95,7 +95,7 @@ room:
 [0]: https://github.com/uoregon-libraries/ripple  "Ripple on github"
 [1]: https://github.com/uoregon-libraries/ripple-ldap "LDAP plugin on github"
 
-[plugins]: [1]/doc-images/plugin-listing.png "Plugins listing"
+[plugins]: https://github.com/uoregon-libraries/ripple-ldap/doc-images/plugin-listing.png "Plugins listing"
 [on-button]: doc-images/on-button.png "Plugin 'on' button"
 [configure-button]: doc-images/configure-button.png "Plugin 'configure' button"
 [ldap-config]: doc-images/ldap-configuration.png "LDAP Plugin configuration page"
