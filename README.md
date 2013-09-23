@@ -95,8 +95,8 @@ room:
 [0]: https://github.com/uoregon-libraries/ripple  "Ripple on github"
 [1]: https://github.com/uoregon-libraries/ripple-ldap "LDAP plugin on github"
 
-[plugins]: doc-images/plugin-listing.png "Plugins listing"
-[on-button]: doc-images/on-button.png "Plugin 'on' button"
-[configure-button]: doc-images/configure-button.png "Plugin 'configure' button"
-[ldap-config]: doc-images/ldap-configuration.png "LDAP Plugin configuration page"
-[login-page]: doc-images/post-install-login-page.png "Login page after LDAP install"
+[plugins]: https://github.com/uoregon-libraries/ripple-ldap/raw/master/doc-images/plugin-listing.png "Plugins listing"
+[on-button]: https://github.com/uoregon-libraries/ripple-ldap/raw/master/doc-images/on-button.png "Plugin 'on' button"
+[configure-button]: https://github.com/uoregon-libraries/ripple-ldap/raw/master/doc-images/configure-button.png "Plugin 'configure' button"
+[ldap-config]: https://github.com/uoregon-libraries/ripple-ldap/raw/master/doc-images/ldap-configuration.png "LDAP Plugin configuration page"
+[login-page]: https://github.com/uoregon-libraries/ripple-ldap/raw/master/doc-images/post-install-login-page.png "Login page after LDAP install"

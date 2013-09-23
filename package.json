@@ -1,6 +1,6 @@
 {
   "title": "LDAP Authentication",
-  "author": "UO Staff",
+  "author": "Jeremy Echols",
   "description": "LDAP Authentication: allows users to log in to LDAP, falling back to local authentication when LDAP is not configured or cannot find the user",
   "name": "ldap-authentication",
   "version": "1.0.1",
