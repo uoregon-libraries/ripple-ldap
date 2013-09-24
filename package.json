@@ -3,7 +3,7 @@
   "author": "Jeremy Echols",
   "description": "LDAP Authentication: allows users to log in to LDAP, falling back to local authentication when LDAP is not configured or cannot find the user",
   "name": "ldap-authentication",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "dependencies": {
     "ldapjs": "0.5.7"
